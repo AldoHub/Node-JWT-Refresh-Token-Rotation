@@ -3,6 +3,7 @@ require('dotenv').config();
 
 const verifyJWT = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    console.log("AUTH HEADER VERIFY", authHeader);
     if (!authHeader) {
         return res.status(401).json({ message: 'No token provided' });
     }

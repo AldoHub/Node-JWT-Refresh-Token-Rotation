@@ -16,7 +16,9 @@ const path = require('path');
 
 const loginController = {
     login: async (req, res) => {
-       
+
+        //look for cookies
+        const cookies = req.cookies;
         const {user, pwd} = req.body;
        
         if(!user || !pwd) {
@@ -35,8 +37,20 @@ const loginController = {
                 
                 const token = jwt.sign({ user: userExists.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
                 const refreshToken = jwt.sign({ user: userExists.email }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
+                console.log("REFRESH TOKEN", refreshToken);
                
                 const users = usersDB.users.filter(user => user.email !== userExists.email);
+                
+                if(cookies?.refreshToken) {
+                    //clear the cookies
+                    res.clearCookie('refreshToken', {
+                        httpOnly: true,
+                        secure: true,
+                        sameSite: 'None',
+                        //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+                    });
+                }
+              
                 //add the refresh token to the user
                 const currentUser = {...userExists, refreshToken};
 
@@ -53,8 +67,8 @@ const loginController = {
                 //send the refresh token to the client as a cookie
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true,
-                    //secure: true,
-                    sameSite: 'strict',
+                    secure: true,
+                    sameSite: 'None',
                     maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
                 });
 
@@ -73,3 +87,5 @@ const loginController = {
 
 }
 module.exports = loginController;
+
+// aldo - Abc123!@

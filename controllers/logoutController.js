@@ -13,22 +13,26 @@ const logoutController = {
         //look for the refresh token in the cookies
         const cookies = req.cookies;
 
+        
         if(!cookies?.refreshToken) {
             return res.sendStatus(204);
         }
+            
 
         const _refreshToken = cookies.refreshToken;
 
         //check if the refresh token exists in the users record
         const userExists = usersDB.users.find(_user => _user.refreshToken === _refreshToken);
-       
+        console.log("LOGOUT USER EXISTS", userExists);
+
+
         if(!userExists) {
             //clear the cookes
             res.clearCookie('refreshToken', {
                 httpOnly: true,
-                //secure: true,
-                sameSite: 'strict',
-                maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+                secure: true,
+                sameSite: 'None',
+                //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
             });
            return res.sendStatus(204);
         }
@@ -49,12 +53,13 @@ const logoutController = {
         //clear the cookies
         res.clearCookie('refreshToken', {
             httpOnly: true,
-            //secure: true,
-            sameSite: 'strict',
-            maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+            secure: true,
+            sameSite: 'None',
+            //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
         });
 
         res.sendStatus(204);
+        
     }
 
 }
