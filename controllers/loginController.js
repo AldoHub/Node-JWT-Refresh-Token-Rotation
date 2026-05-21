@@ -6,6 +6,7 @@ const usersDB = {
 } 
 
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
@@ -16,7 +17,7 @@ const path = require('path');
 
 const loginController = {
     login: async (req, res) => {
-
+    
         //look for cookies
         const cookies = req.cookies;
         const {user, pwd} = req.body;
@@ -35,7 +36,7 @@ const loginController = {
             const valid = await bcrypt.compare(pwd, userExists.password);
             if(valid) {
                 
-                const token = jwt.sign({ user: userExists.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '60s' });
+                const token = jwt.sign({ user: userExists.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20s' });
                 const refreshToken = jwt.sign({ user: userExists.email }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
                 console.log("REFRESH TOKEN", refreshToken);
                
@@ -50,6 +51,7 @@ const loginController = {
                         //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
                     });
                 }
+                
               
                 //add the refresh token to the user
                 const currentUser = {...userExists, refreshToken};
@@ -68,13 +70,13 @@ const loginController = {
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true,
                     secure: true,
-                    sameSite: 'None',
+                    sameSite: 'none',
                     maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
                 });
+                
+                
+                return res.status(200).json({accessToken: token});
 
-                //return the access token
-                res.status(200).json({accessToken: token});
-                return;
             }
             res.status(401).json({ message: 'Invalid password' });
         } catch (err) {
@@ -89,3 +91,6 @@ const loginController = {
 module.exports = loginController;
 
 // aldo - Abc123!@
+
+
+//TODO COOKIE IS NOT BEING SENT

@@ -9,6 +9,7 @@ const fsPromises = require('fs').promises;
 const path = require('path');
 const bcrypt = require('bcrypt');
 
+
 const registerController = {
     register: async (req, res) => {
         const {user, pwd} = req.body;
@@ -19,7 +20,11 @@ const registerController = {
             return;
         }
 
-        const userExists = usersDB.users.find(user => user.email === user);
+        //TODO --- userEXists is not working as intended 
+        const userExists = usersDB.users.find(user => user.email === req.body.user);
+        console.log("USER EXISTS", userExists);
+       
+        
         if (userExists) {
             res.status(409).json({ message: 'User already exists' });
             return;
@@ -44,6 +49,7 @@ const registerController = {
         } catch (err) {
             res.status(500).json({ message: 'Error creating user' });
         }
+        
 
     }
 }

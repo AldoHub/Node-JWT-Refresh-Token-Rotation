@@ -6,13 +6,16 @@ const usersDB = {
 } 
 
 const jwt = require('jsonwebtoken');
+const fsPromises = require('fs').promises;
+const path = require('path');
 require('dotenv').config();
 
 const refreshTokenController = {
     refreshToken: async (req, res) => {
+       
         //look for the refresh token in the cookies
         const cookies = req.cookies;
-        console.log(cookies);
+        console.log("REFRESH TOKEN ENDPOINT", cookies);
 
         
         if(!cookies?.refreshToken) {
@@ -20,9 +23,9 @@ const refreshTokenController = {
             return res.sendStatus(401);
         }
             
-        console.log(cookies.refreshToken);
+       
         const _refreshToken = cookies.refreshToken;
-
+ 
         //clear the cookies
         res.clearCookie('refreshToken', {
             httpOnly: true,
@@ -31,10 +34,28 @@ const refreshTokenController = {
             //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
         });
 
+      
         //check if the refresh token exists in the users record
+        console.log( "TOKENS: ", _refreshToken, cookies.refreshToken);
         const userExists = usersDB.users.find(_user => _user.refreshToken === _refreshToken);
         console.log("USER EXISTS", userExists);
-       
+     
+
+        if(userExists === undefined) {
+            //remove the cookie
+            res.clearCookie('refreshToken', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'None',
+                //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+            });
+
+
+            //send a bad request - probably an error getting the user data
+            return res.sendStatus(500);
+        
+        }
+
         if(!userExists) {
            //detect refresh token re-use
            jwt.verify(_refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, decoded) => {
@@ -110,12 +131,12 @@ const refreshTokenController = {
                 maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
             });
 
-            res.status(200).json({accessToken: token});
+            return res.status(200).json({accessToken: token});
 
 
         });
 
-      
+  
           
     }
 
