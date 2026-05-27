@@ -1,13 +1,16 @@
+/*
 const usersDB = {
     users: require('../model/users.json'),
     setUsers: (_users) => {
         usersDB.users = _users;
     }
 } 
+*/
 
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
+const User = require('../db_models/User');
 require('dotenv').config();
 
 const fsPromises = require('fs').promises;
@@ -21,27 +24,28 @@ const loginController = {
         //look for cookies
         const cookies = req.cookies;
         const {user, pwd} = req.body;
+        console.log("LOGIN", user, pwd);
        
         if(!user || !pwd) {
             res.status(400).json({ message: 'User and password are required' });
             return;
         }
-        const userExists = usersDB.users.find(_user => _user.email === user);
-              
+        const userExists = await User.findOne({user}).catch(err => console.log(err));
+        //console.log("USER EXISTS", userExists);
+             
         if(!userExists) {
             res.status(401).json({ message: 'User does not exist' });
             return;
         }
         try {
             const valid = await bcrypt.compare(pwd, userExists.password);
+            //console.log("VALID", valid);
             if(valid) {
                 
                 const token = jwt.sign({ user: userExists.email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '20s' });
                 const refreshToken = jwt.sign({ user: userExists.email }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' });
-                console.log("REFRESH TOKEN", refreshToken);
+                //console.log("REFRESH TOKEN", refreshToken);
                
-                const users = usersDB.users.filter(user => user.email !== userExists.email);
-                
                 if(cookies?.refreshToken) {
                     //clear the cookies
                     res.clearCookie('refreshToken', {
@@ -51,21 +55,10 @@ const loginController = {
                         //maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
                     });
                 }
-                
-              
+
                 //add the refresh token to the user
-                const currentUser = {...userExists, refreshToken};
-
-                //reset the users file
-                usersDB.setUsers([...users, currentUser]);
-
-                await fsPromises.writeFile(
-                    path.join(__dirname, '../model/users.json'),
-                    JSON.stringify(usersDB.users)
-                ).catch(err => {
-                    res.status(500).json({ message: 'Error saving users to file' });
-                });
-
+                const newUserToken = await User.findByIdAndUpdate(userExists._id, {$set: {refreshToken}}).catch(err => console.log(err));
+              
                 //send the refresh token to the client as a cookie
                 res.cookie('refreshToken', refreshToken, {
                     httpOnly: true,
@@ -73,7 +66,6 @@ const loginController = {
                     sameSite: 'none',
                     maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
                 });
-                
                 
                 return res.status(200).json({accessToken: token});
 

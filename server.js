@@ -8,7 +8,31 @@ const { logger } = require('./middleware/logEvents');
 const errorHandler = require('./middleware/errorHandler');
 const verifyJWT = require('./middleware/verifyJWT');
 const credentials = require('./middleware/credentials');
+const mongoose = require('mongoose');
 const PORT = process.env.PORT || 3000;
+
+
+
+//connect to database
+const database = require('./database/connection');
+
+//mongo connect
+mongoose.connect(
+    database.connection)
+  .then(connection => {
+    console.log("Connection established")
+  })
+  .catch(error => {
+    console.log(database);
+    console.log({
+        error : {
+            name : error.name,
+            message : error.message,
+            errorCode: error.code,
+            codeName: error.codeName
+        }
+    })
+  });
 
 // custom middleware logger
 app.use(logger);

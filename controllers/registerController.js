@@ -1,3 +1,4 @@
+/*
 const usersDB = {
     users: require('../model/users.json'),
     setUsers: (_users) => {
@@ -5,9 +6,12 @@ const usersDB = {
     }
 } 
 
+*/
+
 const fsPromises = require('fs').promises;
 const path = require('path');
 const bcrypt = require('bcrypt');
+const User = require('../db_models/User');
 
 
 const registerController = {
@@ -20,10 +24,9 @@ const registerController = {
             return;
         }
 
-        //TODO --- userEXists is not working as intended 
-        const userExists = usersDB.users.find(user => user.email === req.body.user);
+        const userExists = await User.findOne({user}).catch(err => console.log(err));
         console.log("USER EXISTS", userExists);
-       
+
         
         if (userExists) {
             res.status(409).json({ message: 'User already exists' });
@@ -32,10 +35,19 @@ const registerController = {
 
         try {
             const hashedPassword = await bcrypt.hash(pwd, 10);
-            const newUser = {
-                email: user,
-                password: hashedPassword
+            const newUser = new User({
+                user,
+                password: hashedPassword,
+                createdAt: Date.now(),
+                refreshToken: ''
+            });
+            const createdUser = await newUser.save();
+            if (!createdUser) {
+                res.status(500).json({ message: 'Error creating user' });
+                return;
             }
+
+            /*
             usersDB.setUsers([...usersDB.users, newUser]);
             await fsPromises.writeFile(
                 path.join(__dirname, '../model/users.json'),
@@ -43,13 +55,14 @@ const registerController = {
             ).catch(err => {
                 res.status(500).json({ message: 'Error saving users to file' });
             });
-
+            */
+            
             res.status(201).json({ message: 'User created' });
               
         } catch (err) {
             res.status(500).json({ message: 'Error creating user' });
         }
-        
+       
 
     }
 }
