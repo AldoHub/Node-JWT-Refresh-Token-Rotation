@@ -35,7 +35,7 @@ const refreshTokenController = {
         });
 */
         //check if the refresh token exists in the users record
-        const userExists = await User.findOne({refreshToken: _refreshToken}).catch(err => console.log(err));
+        const userExists = await User.find({refreshToken: _refreshToken}).catch(err => console.log(err));
         //console.log("USER EXISTS USING REFRESH TOKEN", userExists);
 
         /*
